@@ -3,11 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vodun Days - Carte Interactive des Événements</title>
-    
-    <!-- Mapbox GL JS -->
-    <link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
-    <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
+    <title>Vodun Days - Carte Google Maps</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -26,6 +22,7 @@
             top: 0;
             bottom: 0;
             width: 100%;
+            height: 100vh;
         }
         
         .info-panel {
@@ -41,16 +38,6 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(0, 0, 0, 0.1);
             z-index: 1;
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-        }
-        
-        .info-panel.show {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateY(0);
         }
         
         .info-panel h1 {
@@ -136,59 +123,39 @@
             border-color: #1b1b18;
         }
         
-        .nav-btn .icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .mapboxgl-popup-content {
-            background: rgba(255, 255, 255, 0.98);
-            color: #1b1b18;
-            padding: 20px;
+        .search-box {
+            position: absolute;
+            top: 30px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 10px;
             border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
             border: 1px solid rgba(0, 0, 0, 0.1);
-            min-width: 250px;
+            z-index: 1;
         }
         
-        .mapboxgl-popup-content h3 {
-            margin: 0 0 8px 0;
-            font-size: 18px;
-            font-weight: 600;
+        .search-box input {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.15);
             color: #1b1b18;
-        }
-        
-        .mapboxgl-popup-content p {
-            margin: 5px 0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            width: 250px;
             font-size: 14px;
-            color: rgba(27, 27, 24, 0.85);
         }
         
-        .mapboxgl-popup-content .time {
-            display: inline-block;
-            background: rgba(255, 102, 0, 0.2);
-            color: #ff6600;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            margin-top: 8px;
+        .search-box input::placeholder {
+            color: rgba(27, 27, 24, 0.5);
         }
         
-        .mapboxgl-popup-close-button {
-            color: #1b1b18;
-            font-size: 24px;
-            padding: 5px 10px;
+        .search-box input:focus {
+            outline: none;
+            border-color: rgba(0, 0, 0, 0.3);
+            background: white;
         }
-        
-        .mapboxgl-popup-close-button:hover {
-            background: rgba(0, 0, 0, 0.05);
-        }
-        
+
         /* Panneau de détails de l'événement */
         .event-details-panel {
             position: absolute;
@@ -209,6 +176,76 @@
         .event-details-panel.show {
             transform: translateY(0);
             opacity: 1;
+        }
+        
+        /* Styles pour marqueurs Google Maps */
+        .google-marker {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+        
+        .google-marker-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 4px solid #ff8800; /* Orange par défaut */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .google-marker-circle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
+        }
+        
+        /* Bordure rouge pour VodunDays */
+        .google-marker.vodundays-event .google-marker-circle {
+            border-color: #ff0000;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+        }
+        
+        /* Animation clignotante pour événements en cours */
+        .google-marker.ongoing-event .google-marker-circle {
+            animation: pulse-marker 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-marker {
+            0%, 100% {
+                box-shadow: 0 0 15px rgba(255, 136, 0, 0.8);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(255, 136, 0, 1), 0 0 40px rgba(255, 0, 0, 0.5);
+                transform: scale(1.05);
+            }
+        }
+        
+        /* Badge "Démarre bientôt" */
+        .google-marker-badge {
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ff6600, #ff3333);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(255, 51, 51, 0.4);
+            z-index: 5;
+            pointer-events: none;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-5px); }
         }
         
         .event-details-header {
@@ -323,678 +360,330 @@
         .event-details-button:active {
             transform: translateY(0);
         }
-        
-        .search-box {
-            position: absolute;
-            top: 30px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            z-index: 1;
-        }
-        
-        .search-box input {
-            width: 180px;
-            padding: 10px 16px;
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.15);
-            color: #1b1b18;
-            padding: 10px 15px;
-            border-radius: 8px;
-            width: 250px;
-            font-size: 14px;
-        }
-        
-        .search-box input::placeholder {
-            color: rgba(27, 27, 24, 0.5);
-        }
-        
-        .search-box input:focus {
-            outline: none;
-            border-color: rgba(0, 0, 0, 0.3);
-            background: white;
-        }
-        
-        .marker {
-            background-size: cover;
-            background-position: center;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .marker:hover {
-            transform: scale(1.15);
-            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
-        }
-        
-        .marker::after {
-            content: '';
-            position: absolute;
-            inset: -3px;
-            border-radius: 50%;
-            padding: 3px;
-            background: linear-gradient(135deg, var(--marker-color-1), var(--marker-color-2));
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none;
-        }
-        
-        .marker-vodur {
-            --marker-color-1: #ff3333;
-            --marker-color-2: #ff0000;
-            border: 3px solid #ff3333;
-        }
-        
-        .marker-concert {
-            --marker-color-1: #ff8800;
-            --marker-color-2: #ff6600;
-            border: 3px solid #ff8800;
-        }
-        
-        .marker-stand {
-            --marker-color-1: #ffbb00;
-            --marker-color-2: #ff9900;
-            border: 3px solid #ffbb00;
-        }
-        
-        .marker-activite {
-            --marker-color-1: #ffdd00;
-            --marker-color-2: #ffbb00;
-            border: 3px solid #ffdd00;
-        }
-        
-        .marker-label {
-            position: absolute;
-            top: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(27, 27, 24, 0.95);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        .marker:hover .marker-label {
-            opacity: 1;
-        }
-        
-        .marker-tooltip {
-            position: fixed;
-            background: rgba(27, 27, 24, 0.98);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-            max-width: 300px;
-            z-index: 9999;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .marker-tooltip.show {
-            opacity: 1;
-        }
-        
-        .marker-tooltip h4 {
-            margin: 0 0 8px 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: #fff;
-        }
-        
-        .marker-tooltip p {
-            margin: 5px 0;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.4;
-        }
-        
-        .marker-tooltip .time {
-            display: inline-block;
-            background: rgba(255, 102, 0, 0.2);
-            color: #ff6600;
-            padding: 3px 10px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 500;
-            margin-top: 5px;
-        }
-        
-        @media (max-width: 768px) {
-            .info-panel {
-                max-width: calc(100% - 40px);
-                padding: 20px;
-            }
-            
-            .info-panel h1 {
-                font-size: 24px;
-            }
-        
-        .info-panel h1 img.logo {
-            width: 22px;
-            height: 22px;
-        }
-                bottom: 20px;
-                padding: 10px;
-            }
-            
-            .search-box {
-                top: 30px;
-                right: 10px;
-            }
-            
-            .search-box input {
-                width: 150px;
-                font-size: 12px;
-                padding: 8px 12px;
-            }
-        }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    
-    <!-- Tooltip pour afficher les infos au survol prolongé -->
-    <div id="markerTooltip" class="marker-tooltip"></div>
-
-    <!-- Event Details Panel -->
-    <div id="eventDetailsPanel" class="event-details-panel">
-        <div class="event-details-header" id="panelHeader">
-            <button class="event-details-close" id="closePanel">×</button>
-        </div>
-        <div class="event-details-content">
-            <h2 id="panelTitle"></h2>
-            <div class="event-details-meta">
-                <div class="meta-item">
-                    <span class="meta-icon">📍</span>
-                    <span id="panelLocation"></span>
-                </div>
-                <div class="meta-item">
-                    <span class="meta-icon">🗓️</span>
-                    <span id="panelDate"></span>
-                </div>
-                <div class="meta-item">
-                    <span class="meta-icon">🕐</span>
-                    <span id="panelTime"></span>
-                </div>
-            </div>
-            <div class="event-details-description" id="panelDescription"></div>
-            <button class="event-details-button" id="directionsBtn">
-                <span>🧭</span> S'y rendre
-            </button>
-        </div>
-    </div>
-    
+    <!-- Panneau d'information -->
     <div class="info-panel">
-        <h1>
-            <img src="{{ asset('vodun-days.png') }}" alt="Logo Vodun Days" class="logo">
-            Vodun Days
-        </h1>
-        <p>Découvrez les événements culturels et célébrations du patrimoine Vodun à travers la carte interactive. Cliquez sur les marqueurs pour plus d'informations.</p>
+        <h1>🗺️ Vodun Days</h1>
+        <p>Carte Google Maps interactive des événements culturels du Bénin</p>
         <div class="legend">
             <div class="legend-item">
-                <div class="legend-color" style="background: #ff3333;"></div>
-                <span>Vodur</span>
+                <span class="legend-color" style="background: #ff3333;"></span>
+                <span>Vodun</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color" style="background: #ff8800;"></div>
+                <span class="legend-color" style="background: #ff8800;"></span>
                 <span>Concert</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color" style="background: #ffbb00;"></div>
+                <span class="legend-color" style="background: #ffbb00;"></span>
                 <span>Stand</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color" style="background: #ffdd00;"></div>
+                <span class="legend-color" style="background: #ffdd00;"></span>
                 <span>Activité</span>
             </div>
         </div>
     </div>
-    
+
+    <!-- Boîte de recherche -->
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 Rechercher un événement..." />
+        <input type="text" id="searchInput" placeholder="🔍 Rechercher un événement...">
     </div>
-    
+
+    <!-- Navigation des filtres -->
     <div class="bottom-nav">
         <button class="nav-btn active" data-filter="all">
-            <span class="icon">⭐</span>
-            <span>Tout</span>
+            <span>📍</span>
+            <span>Tous</span>
         </button>
         <button class="nav-btn" data-filter="vodur">
-            <span class="icon">🏛️</span>
+            <span>🏛️</span>
             <span>Vodundays</span>
         </button>
-        <button class="nav-btn" data-filter="concert">
-            <span class="icon">🎵</span>
-            <span>Événements</span>
+        @foreach($categories->take(4) as $category)
+        <button class="nav-btn" data-filter="category-{{ $category['id'] }}" data-category-label="{{ $category['label'] }}">
+            <span>🎯</span>
+            <span>{{ $category['label'] }}</span>
         </button>
-        <button class="nav-btn" data-filter="stand">
-            <span class="icon">🏪</span>
-            <span>Bon plans</span>
-        </button>
+        @endforeach
+    </div>
+
+    <!-- Carte Google Maps -->
+    <div id="map"></div>
+
+    <!-- Panneau de détails de l'événement -->
+    <div id="eventDetailsPanel" class="event-details-panel">
+        <div id="panelHeader" class="event-details-header">
+            <button id="closePanel" class="event-details-close">✕</button>
+        </div>
+        <div class="event-details-content">
+            <h2 id="panelTitle" class="event-details-title"></h2>
+            <div class="event-details-location">
+                <span>📍</span>
+                <span id="panelLocation"></span>
+            </div>
+            <div class="event-details-meta">
+                <div class="event-meta-item">
+                    <span>📅</span>
+                    <strong id="panelDate"></strong>
+                </div>
+                <div class="event-meta-item">
+                    <span>⏰</span>
+                    <span id="panelTime"></span>
+                </div>
+            </div>
+            <p id="panelDescription" class="event-details-description"></p>
+            <button id="directionsBtn" class="event-details-button">
+                <span>🧭</span>
+                <span>Comment s'y rendre</span>
+            </button>
+        </div>
     </div>
 
     <script>
-        // Configuration Mapbox - Token depuis .env
-        mapboxgl.accessToken = '{{ env('MAPBOX_TOKEN') }}';
-        
         // Données des événements depuis PHP
         const events = @json($events);
         
-        // Initialisation de la carte centrée sur Ouidah avec un style plus lisible
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12', // Style clair avec toutes les informations visibles
-            center: [2.0850, 6.3611], // Ouidah
-            zoom: 14,
-            pitch: 0, // Vue plane pour mieux voir les détails
-            bearing: 0
-        });
-        
-        // Couleurs par type d'événement
-        const colors = {
-            vodur: '#ff3333',
-            concert: '#ff8800',
-            stand: '#ffbb00',
-            activite: '#ffdd00'
-        };
-        
-        // Stocker les marqueurs
+        console.log('========================================');
+        console.log('🗺️ GOOGLE MAPS - VODUN DAYS');
+        console.log('========================================');
+        console.log('📊 Nombre d\'événements:', events.length);
+        console.log('📋 Événements:', events);
+        console.log('========================================');
+
+        let map;
         let markers = [];
-        
-        // Tooltip pour affichage au survol
-        const tooltip = document.getElementById('markerTooltip');
-        let tooltipTimeout = null;
-        
-        // Ajouter les marqueurs sur la carte
-        events.forEach(event => {
-            const el = document.createElement('div');
-            el.className = `marker marker-${event.type}`;
+        let currentEvent = null;
+
+        function initMap() {
+            // Créer la carte centrée sur Ouidah
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 6.3611, lng: 2.0850 },
+                zoom: 14,
+                mapTypeControl: true,
+                streetViewControl: true,
+                fullscreenControl: true,
+                zoomControl: true,
+                mapTypeId: 'roadmap',
+                styles: [
+                    {
+                        featureType: 'poi',
+                        elementType: 'labels',
+                        stylers: [{ visibility: 'on' }]
+                    }
+                ]
+            });
+
+            // Ajouter les marqueurs
+            events.forEach(event => {
+                addMarker(event);
+            });
+
+            // Ajuster la vue pour inclure tous les marqueurs
+            if (markers.length > 0) {
+                const bounds = new google.maps.LatLngBounds();
+                markers.forEach(({ marker }) => {
+                    bounds.extend(marker.getPosition());
+                });
+                map.fitBounds(bounds);
+            }
+        }
+
+        function addMarker(event) {
+            const position = { 
+                lat: event.coordinates[1], // Google Maps: lat, lng
+                lng: event.coordinates[0] 
+            };
+
+            // Créer l'élément HTML du marqueur
+            const markerEl = document.createElement('div');
+            markerEl.className = 'google-marker';
             
-            // Ajouter l'image de fond
-            if (event.image) {
-                el.style.backgroundImage = `url('${event.image}')`;
+            // Ajouter classes spéciales
+            if (event.isVodunDays) {
+                markerEl.classList.add('vodundays-event');
+            }
+            if (event.status === 'ongoing') {
+                markerEl.classList.add('ongoing-event');
             }
             
-            // Empêcher les événements de déplacement
-            el.style.pointerEvents = 'auto';
-            el.style.cursor = 'pointer';
-            
-            // Ajouter le label au survol
-            const label = document.createElement('div');
-            label.className = 'marker-label';
-            label.textContent = event.name;
-            el.appendChild(label);
-            
-            const marker = new mapboxgl.Marker({
-                element: el,
-                anchor: 'center',
-                draggable: false
-            })
-                .setLngLat(event.coordinates)
-                .addTo(map);
-            
-            // Au clic, ouvrir le panneau de détails
-            el.addEventListener('click', function() {
-                openEventDetails(event);
-            });
-            
-            // Gestion du tooltip au survol prolongé
-            el.addEventListener('mouseenter', function(e) {
-                // Délai de 800ms avant d'afficher le tooltip
-                tooltipTimeout = setTimeout(() => {
-                    tooltip.innerHTML = `
-                        <h4>${event.icon} ${event.name}</h4>
-                        <p><strong>📍 ${event.location}</strong></p>
-                        <p>${event.description}</p>
-                        <span class="time">⏰ ${event.time}</span>
-                    `;
-                    
-                    // Positionner le tooltip près du curseur
-                    const rect = el.getBoundingClientRect();
-                    tooltip.style.left = (rect.right + 10) + 'px';
-                    tooltip.style.top = rect.top + 'px';
-                    
-                    // Afficher le tooltip
-                    tooltip.classList.add('show');
-                }, 800); // 800ms de délai
-            });
-            
-            el.addEventListener('mouseleave', function() {
-                // Annuler le timeout si on quitte avant le délai
-                if (tooltipTimeout) {
-                    clearTimeout(tooltipTimeout);
-                    tooltipTimeout = null;
-                }
-                // Masquer le tooltip
-                tooltip.classList.remove('show');
-            });
-            
-            el.addEventListener('mousemove', function(e) {
-                // Mettre à jour la position du tooltip pendant le mouvement
-                if (tooltip.classList.contains('show')) {
-                    tooltip.style.left = (e.clientX + 15) + 'px';
-                    tooltip.style.top = (e.clientY - tooltip.offsetHeight / 2) + 'px';
-                }
-            });
-            
-            // Stocker la taille d'origine
-            marker._originalSize = 60;
-            
-            markers.push({ marker, event });
-        });
-        
-        // Fonction pour ajuster la taille des marqueurs selon le zoom
-        function updateMarkerSizes() {
-            const zoom = map.getZoom();
-            const baseSize = 60;
-            
-            // Calculer la taille en fonction du niveau de zoom
-            let scale;
-            if (zoom < 12) {
-                scale = 0.5; // 50% de la taille
-            } else if (zoom < 14) {
-                scale = 0.5 + (zoom - 12) * 0.25; // Transition de 50% à 100%
-            } else if (zoom > 16) {
-                scale = 1 + (zoom - 16) * 0.2; // Augmente au-delà de 100%
-            } else {
-                scale = 1; // Taille normale entre 14 et 16
+            // Badge "Démarre bientôt"
+            if (event.status === 'starting-soon') {
+                const badge = document.createElement('div');
+                badge.className = 'google-marker-badge';
+                badge.textContent = '⏰ Démarre bientôt';
+                markerEl.appendChild(badge);
             }
             
-            const size = Math.max(30, Math.min(80, baseSize * scale));
-            
-            markers.forEach(({ marker }) => {
-                const el = marker.getElement();
-                if (el) {
-                    // Utiliser transform au lieu de modifier width/height pour éviter le repositionnement
-                    el.style.transform = `scale(${scale})`;
-                    el.style.transformOrigin = 'center center';
-                    
-                    // Ajuster l'opacité pour les petits zooms
-                    if (zoom < 11) {
-                        el.style.opacity = '0.7';
-                    } else {
-                        el.style.opacity = '1';
+            // Cercle du marqueur avec image
+            const circle = document.createElement('div');
+            circle.className = 'google-marker-circle';
+            circle.style.backgroundImage = `url('${event.image}')`;
+            markerEl.appendChild(circle);
+
+            // Créer le marqueur Google Maps avec élément HTML personnalisé
+            const marker = new google.maps.Marker({
+                map: map,
+                position: position,
+                title: event.name,
+                icon: {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                        <svg width="1" height="1" xmlns="http://www.w3.org/2000/svg"></svg>
+                    `),
+                    anchor: new google.maps.Point(0, 0),
+                },
+                animation: google.maps.Animation.DROP
+            });
+
+            // Overlay personnalisé pour afficher le HTML
+            class CustomOverlay extends google.maps.OverlayView {
+                constructor(position, content) {
+                    super();
+                    this.position = position;
+                    this.content = content;
+                }
+
+                onAdd() {
+                    this.div = this.content;
+                    const panes = this.getPanes();
+                    panes.overlayMouseTarget.appendChild(this.div);
+                }
+
+                draw() {
+                    const overlayProjection = this.getProjection();
+                    const pos = overlayProjection.fromLatLngToDivPixel(this.position);
+                    this.div.style.left = (pos.x - 30) + 'px';
+                    this.div.style.top = (pos.y - 30) + 'px';
+                    this.div.style.position = 'absolute';
+                }
+
+                onRemove() {
+                    if (this.div) {
+                        this.div.parentNode.removeChild(this.div);
+                        this.div = null;
                     }
                 }
+            }
+
+            const overlay = new CustomOverlay(position, markerEl);
+            overlay.setMap(map);
+
+            // Au clic, afficher le panneau de détails
+            markerEl.addEventListener('click', () => {
+                openEventDetails(event);
+            });
+
+            markers.push({ 
+                marker, 
+                overlay,
+                event 
             });
         }
-        
-        // Écouter les changements de zoom
-        map.on('zoom', updateMarkerSizes);
-        
-        // Appliquer la taille initiale après chargement
-        map.on('load', updateMarkerSizes);
-        
-        // Contrôles de navigation
-        map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-        
-        // Filtrage des événements et gestion du panneau d'info
-        const infoPanel = document.querySelector('.info-panel');
-        
+
+        // Fonction pour ouvrir le panneau de détails
+        function openEventDetails(event) {
+            currentEvent = event;
+            
+            const panel = document.getElementById('eventDetailsPanel');
+            const header = document.getElementById('panelHeader');
+            const title = document.getElementById('panelTitle');
+            const location = document.getElementById('panelLocation');
+            const date = document.getElementById('panelDate');
+            const time = document.getElementById('panelTime');
+            const description = document.getElementById('panelDescription');
+            
+            // Remplir les informations
+            header.style.backgroundImage = `url(${event.image})`;
+            title.textContent = `${event.icon} ${event.name}`;
+            location.textContent = event.location;
+            date.textContent = event.date || 'Date à confirmer';
+            time.textContent = event.time;
+            description.textContent = event.description;
+            
+            // Afficher le panneau
+            panel.classList.add('show');
+            
+            // Centrer la carte sur l'événement
+            map.panTo({ lat: event.coordinates[1], lng: event.coordinates[0] });
+            map.setZoom(16);
+        }
+
+        // Fonction pour fermer le panneau
+        function closeEventDetails() {
+            const panel = document.getElementById('eventDetailsPanel');
+            panel.classList.remove('show');
+            currentEvent = null;
+        }
+
+        // Bouton de fermeture du panneau
+        document.getElementById('closePanel').addEventListener('click', closeEventDetails);
+
+        // Bouton "Comment s'y rendre"
+        document.getElementById('directionsBtn').addEventListener('click', () => {
+            if (currentEvent) {
+                const destination = `${currentEvent.coordinates[1]},${currentEvent.coordinates[0]}`;
+                const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+                window.open(url, '_blank');
+            }
+        });
+
+        // Filtrage des événements
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                // Retirer la classe active de tous les boutons
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                // Ajouter la classe active au bouton cliqué
                 this.classList.add('active');
                 
                 const filter = this.dataset.filter;
+                const categoryLabel = this.dataset.categoryLabel;
                 
-                // Afficher le panneau uniquement pour le filtre 'vodur'
-                if (filter === 'vodur' && infoPanel) {
-                    infoPanel.classList.add('show');
-                } else if (infoPanel) {
-                    infoPanel.classList.remove('show');
-                }
-                
-                markers.forEach(({ marker, event }) => {
-                    if (filter === 'all' || event.type === filter) {
-                        marker.getElement().style.display = 'block';
+                markers.forEach(({ marker, overlay, event }) => {
+                    let shouldShow = false;
+                    
+                    if (filter === 'all') {
+                        shouldShow = true;
+                    } else if (filter === 'vodur') {
+                        shouldShow = event.type === 'vodur';
+                    } else if (filter.startsWith('category-')) {
+                        // Filtrer par catégorie API
+                        shouldShow = event.category === categoryLabel;
                     } else {
-                        marker.getElement().style.display = 'none';
+                        shouldShow = event.type === filter;
+                    }
+                    
+                    if (overlay) {
+                        overlay.setMap(shouldShow ? map : null);
+                    } else {
+                        marker.setMap(shouldShow ? map : null);
                     }
                 });
             });
         });
-        
+
         // Recherche d'événements
         const searchInput = document.getElementById('searchInput');
         searchInput.addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
             
-            markers.forEach(({ marker, event }) => {
+            markers.forEach(({ marker, overlay, event }) => {
                 const matchesSearch = 
                     event.name.toLowerCase().includes(searchTerm) ||
                     event.location.toLowerCase().includes(searchTerm) ||
                     event.description.toLowerCase().includes(searchTerm);
                 
-                marker.getElement().style.display = matchesSearch ? 'block' : 'none';
+                if (overlay) {
+                    overlay.setMap(matchesSearch ? map : null);
+                } else {
+                    marker.setMap(matchesSearch ? map : null);
+                }
             });
         });
-        
-        // Animation de rotation douce de la carte
-        let rotating = false;
-        
-        function rotateCamera(timestamp) {
-            if (rotating) {
-                map.rotateTo((timestamp / 200) % 360, { duration: 0 });
-                requestAnimationFrame(rotateCamera);
-            }
-        }
-        
-        // Démarrer la rotation au chargement (optionnel)
-        // rotating = true;
-        // rotateCamera(0);
-        
-        // Effet 3D sur les bâtiments
-        map.on('load', () => {
-            const layers = map.getStyle().layers;
-            const labelLayerId = layers.find(
-                (layer) => layer.type === 'symbol' && layer.layout['text-field']
-            ).id;
-            
-            map.addLayer(
-                {
-                    'id': '3d-buildings',
-                    'source': 'composite',
-                    'source-layer': 'building',
-                    'filter': ['==', 'extrude', 'true'],
-                    'type': 'fill-extrusion',
-                    'minzoom': 15,
-                    'paint': {
-                        'fill-extrusion-color': '#444',
-                        'fill-extrusion-height': [
-                            'interpolate',
-                            ['linear'],
-                            ['zoom'],
-                            15,
-                            0,
-                            15.05,
-                            ['get', 'height']
-                        ],
-                        'fill-extrusion-base': [
-                            'interpolate',
-                            ['linear'],
-                            ['zoom'],
-                            15,
-                            0,
-                            15.05,
-                            ['get', 'min_height']
-                        ],
-                        'fill-extrusion-opacity': 0.6
-                    }
-                },
-                labelLayerId
-            );
-        });
+    </script>
 
-        // Gestion du panneau de détails
-        const eventPanel = document.getElementById('eventDetailsPanel');
-        const panelHeader = document.getElementById('panelHeader');
-        const panelTitle = document.getElementById('panelTitle');
-        const panelLocation = document.getElementById('panelLocation');
-        const panelDate = document.getElementById('panelDate');
-        const panelTime = document.getElementById('panelTime');
-        const panelDescription = document.getElementById('panelDescription');
-        const closePanel = document.getElementById('closePanel');
-        const directionsBtn = document.getElementById('directionsBtn');
-        
-        let currentEvent = null;
-        let directionsLayer = null;
-        
-        function openEventDetails(event) {
-            currentEvent = event;
-            
-            // Remplir les informations
-            panelHeader.style.backgroundImage = `url(${event.image})`;
-            panelTitle.textContent = `${event.icon} ${event.name}`;
-            panelLocation.textContent = event.location;
-            panelDate.textContent = event.date || 'Date à confirmer';
-            panelTime.textContent = event.time;
-            panelDescription.textContent = event.description;
-            
-            // Afficher le panneau
-            eventPanel.classList.add('show');
-            
-            // Centrer la carte sur l'événement
-            map.flyTo({
-                center: event.coordinates,
-                zoom: 16,
-                duration: 1000
-            });
-        }
-        
-        function closeEventDetails() {
-            eventPanel.classList.remove('show');
-            currentEvent = null;
-            
-            // Supprimer l'itinéraire s'il existe
-            if (directionsLayer && map.getLayer('route')) {
-                map.removeLayer('route');
-                map.removeSource('route');
-                directionsLayer = null;
-            }
-        }
-        
-        closePanel.addEventListener('click', closeEventDetails);
-        
-        // Fonction pour afficher l'itinéraire
-        directionsBtn.addEventListener('click', function() {
-            if (!currentEvent) return;
-            
-            // Obtenir la position de l'utilisateur
-            if (navigator.geolocation) {
-                directionsBtn.innerHTML = '<span>⏳</span> Calcul en cours...';
-                directionsBtn.disabled = true;
-                
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        const userLocation = [position.coords.longitude, position.coords.latitude];
-                        const eventLocation = currentEvent.coordinates;
-                        
-                        // Utiliser l'API Directions de Mapbox
-                        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${userLocation[0]},${userLocation[1]};${eventLocation[0]},${eventLocation[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
-                        
-                        fetch(url)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.routes && data.routes.length > 0) {
-                                    const route = data.routes[0].geometry;
-                                    const duration = Math.round(data.routes[0].duration / 60);
-                                    const distance = (data.routes[0].distance / 1000).toFixed(1);
-                                    
-                                    // Supprimer l'ancienne route si elle existe
-                                    if (map.getLayer('route')) {
-                                        map.removeLayer('route');
-                                        map.removeSource('route');
-                                    }
-                                    
-                                    // Ajouter la nouvelle route sur la carte
-                                    map.addSource('route', {
-                                        'type': 'geojson',
-                                        'data': {
-                                            'type': 'Feature',
-                                            'properties': {},
-                                            'geometry': route
-                                        }
-                                    });
-                                    
-                                    map.addLayer({
-                                        'id': 'route',
-                                        'type': 'line',
-                                        'source': 'route',
-                                        'layout': {
-                                            'line-join': 'round',
-                                            'line-cap': 'round'
-                                        },
-                                        'paint': {
-                                            'line-color': '#FF6B35',
-                                            'line-width': 5,
-                                            'line-opacity': 0.8
-                                        }
-                                    });
-                                    
-                                    directionsLayer = 'route';
-                                    
-                                    // Ajuster la vue pour montrer tout l'itinéraire
-                                    const coordinates = route.coordinates;
-                                    const bounds = coordinates.reduce((bounds, coord) => {
-                                        return bounds.extend(coord);
-                                    }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
-                                    
-                                    map.fitBounds(bounds, {
-                                        padding: { top: 100, bottom: 100, left: 100, right: 450 }
-                                    });
-                                    
-                                    // Ajouter un marqueur pour la position de l'utilisateur
-                                    new mapboxgl.Marker({ color: '#4CAF50' })
-                                        .setLngLat(userLocation)
-                                        .setPopup(new mapboxgl.Popup().setHTML('<p>Votre position</p>'))
-                                        .addTo(map);
-                                    
-                                    directionsBtn.innerHTML = `<span>✅</span> ${distance} km • ${duration} min`;
-                                    directionsBtn.disabled = false;
-                                } else {
-                                    directionsBtn.innerHTML = '<span>❌</span> Itinéraire introuvable';
-                                    directionsBtn.disabled = false;
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Erreur lors du calcul de l\'itinéraire:', error);
-                                directionsBtn.innerHTML = '<span>❌</span> Erreur';
-                                directionsBtn.disabled = false;
-                            });
-                    },
-                    function(error) {
-                        alert('Impossible d\'obtenir votre position. Veuillez autoriser la géolocalisation.');
-                        directionsBtn.innerHTML = '<span>🧭</span> S\'y rendre';
-                        directionsBtn.disabled = false;
-                    }
-                );
-            } else {
-                alert('La géolocalisation n\'est pas supportée par votre navigateur.');
-            }
-        });
+    <!-- Google Maps API (version standard, sans Advanced Markers) -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY', 'AIzaSyDummy') }}&callback=initMap">
     </script>
 </body>
 </html>
