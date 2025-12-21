@@ -399,7 +399,7 @@
             <span>Tous</span>
         </button>
         <button class="nav-btn" data-filter="vodur">
-            <span>🏛️</span>
+            <img src="{{ asset('vodun-days.png') }}" alt="VodunDays" style="width: 20px; height: 20px; object-fit: contain;">
             <span>Vodundays</span>
         </button>
         @foreach($categories->take(4) as $category)
@@ -644,7 +644,7 @@
                     if (filter === 'all') {
                         shouldShow = true;
                     } else if (filter === 'vodur') {
-                        shouldShow = event.type === 'vodur';
+                        shouldShow = event.isVodunDays === true;
                     } else if (filter.startsWith('category-')) {
                         // Filtrer par catégorie API
                         shouldShow = event.category === categoryLabel;
@@ -681,9 +681,9 @@
         });
     </script>
 
-    <!-- Google Maps API (version standard, sans Advanced Markers) -->
+    <!-- Google Maps API -->
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY', 'AIzaSyDummy') }}&callback=initMap">
+        src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY', 'AIzaSyDummy') }}&callback=initMap&loading=async">
     </script>
 </body>
 </html>

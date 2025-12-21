@@ -55,11 +55,8 @@ class VodunDaysController extends Controller
             $apiUrl = env('API_URL');
             $token = env('CLIENT_DEFAULT_ACCOUNT_TOKEN');
             
-            // Préparer les paramètres de la requête
-            $params = [
-                'noLimit' => 'true',
-                'append' => 'description'
-            ];
+            // Préparer les paramètres de la requête (sans noLimit qui cause des erreurs)
+            $params = [];
             
             // Ajouter le filtre de catégorie si présent
             if ($category) {
@@ -72,6 +69,8 @@ class VodunDaysController extends Controller
             }
             
             $fullUrl = $apiUrl . '/admin/app/events';
+            
+            Log::info('🌐 Appel API: ' . $fullUrl, ['params' => $params]);
             
             // Appel API pour récupérer les événements selon la documentation
             // Note: L'API YoPassHub n'utilise pas le préfixe "Bearer"
@@ -88,24 +87,36 @@ class VodunDaysController extends Controller
                 
                 // Vérifier le statut de la réponse
                 if (!isset($apiData['statut']) || !$apiData['statut']) {
-                    Log::warning('API returned unsuccessful status');
+                    $errorMsg = $apiData['message'] ?? 'Unknown error';
+                    Log::error('❌ API returned unsuccessful status: ' . $errorMsg, ['response' => $apiData]);
+                    
+                    // Si le token a expiré, afficher un message clair
+                    if (str_contains($errorMsg, 'session') || str_contains($errorMsg, 'connecter')) {
+                        Log::error('🔑 TOKEN EXPIRÉ - Veuillez mettre à jour CLIENT_DEFAULT_ACCOUNT_TOKEN dans .env');
+                    }
                     return [];
                 }
                 
                 // Vérifier la structure data.list
                 if (!isset($apiData['data']['list'])) {
-                    Log::error('Invalid API response structure');
+                    Log::error('❌ Invalid API response structure', ['response' => $apiData]);
                     return [];
                 }
                 
+                Log::info('✅ API Response OK - ' . count($apiData['data']['list']) . ' événements récupérés');
+                
+                // Récupérer les catégories pour le mapping
+                $categories = $this->fetchCategoriesFromApi();
+                
                 // Mapper les événements de l'API vers le format de la carte
-                return $this->mapApiEventsToMapFormat($apiData['data']['list']);
+                return $this->mapApiEventsToMapFormat($apiData['data']['list'], $categories);
             } else {
-                Log::error('API Events request failed: ' . $response->status());
+                $errorBody = $response->json();
+                Log::error('❌ API Events request failed: ' . $response->status(), ['body' => $errorBody]);
                 return [];
             }
         } catch (\Exception $e) {
-            Log::error('API Exception: ' . $e->getMessage());
+            Log::error('❌ API Exception: ' . $e->getMessage());
             return [];
         }
     }
@@ -113,8 +124,14 @@ class VodunDaysController extends Controller
     /**
      * Mapper les événements de l'API vers le format attendu par la carte
      */
-    private function mapApiEventsToMapFormat($apiEvents)
+    private function mapApiEventsToMapFormat($apiEvents, $categories = [])
     {
+        // Créer un dictionnaire des catégories par ID pour un accès rapide
+        $categoriesById = [];
+        foreach ($categories as $cat) {
+            $categoriesById[$cat['id']] = $cat;
+        }
+        
         $mappedEvents = [];
         
         foreach ($apiEvents as $event) {
@@ -155,14 +172,50 @@ class VodunDaysController extends Controller
             $icon = $this->getEventIcon($type);
             $date = $this->formatEventDate($event['date_from'] ?? null);
             $time = $this->formatEventTime($event);
-            $image = !empty($event['photos']) ? $event['photos'][0] : $this->getDefaultImage($type);
+            
+            // Récupérer l'image (l'API retourne déjà l'URL complète)
+            $image = $this->getDefaultImage($type);
+            if (!empty($event['photos']) && is_array($event['photos'])) {
+                $photoUrl = $event['photos'][0];
+                
+                // Nettoyer les URLs dupliquées (ex: https://api.../uploads/https://api.../uploads/...)
+                $apiUrl = env('API_URL');
+                $uploadsPath = $apiUrl . '/uploads/';
+                
+                // Si l'URL contient un doublon, enlever le premier préfixe
+                if (str_contains($photoUrl, $uploadsPath . 'https://')) {
+                    $photoUrl = substr($photoUrl, strlen($uploadsPath));
+                } elseif (str_contains($photoUrl, $uploadsPath . 'http://')) {
+                    $photoUrl = substr($photoUrl, strlen($uploadsPath));
+                }
+                
+                // S'assurer que l'URL ne contient pas de doublon
+                if (str_starts_with($photoUrl, 'http')) {
+                    $image = $photoUrl; // URL déjà complète
+                } else {
+                    // Ajouter le préfixe seulement si nécessaire
+                    $image = str_starts_with($photoUrl, '/uploads/') 
+                        ? $apiUrl . $photoUrl 
+                        : $photoUrl;
+                }
+            }
             
             // Déterminer le statut de l'événement (en cours, démarre bientôt, passé, futur)
             $status = $this->determineEventStatus($event['date_from'] ?? null, $event['date_to'] ?? null);
             
-            // Vérifier si c'est un événement VodunDays
-            $isVodunDays = str_contains(strtolower($event['category_detail']['tag'] ?? ''), 'vodundays') 
-                        || str_contains(strtolower($event['name'] ?? ''), 'vodundays');
+            // Récupérer les infos de catégorie
+            $categoryId = $event['category'] ?? null;
+            $categoryInfo = $categoriesById[$categoryId] ?? null;
+            $categoryLabel = $categoryInfo['label'] ?? 'Général';
+            $categoryTag = $categoryInfo['tag'] ?? '';
+            
+            // Vérifier si c'est un événement VodunDays en cherchant dans le nom et la description
+            $eventName = strtolower($event['name'] ?? '');
+            $eventDescription = strtolower($event['description'] ?? '');
+            $isVodunDays = str_contains($eventName, 'vodundays') 
+                        || str_contains($eventName, 'vodun days')
+                        || str_contains($eventDescription, 'vodundays')
+                        || str_contains($eventDescription, 'vodun days');
             
             $mappedEvents[] = [
                 'id' => $event['id'] ?? uniqid('evt_'),
@@ -170,7 +223,7 @@ class VodunDaysController extends Controller
                 'location' => $event['adress'] ?? 'Ouidah',
                 'coordinates' => [$longitude, $latitude], // Mapbox: [longitude, latitude]
                 'type' => $type,
-                'category' => $event['category_detail']['label'] ?? 'Général',
+                'category' => $categoryLabel,
                 'description' => $event['description'] ?? 'Découvrez cet événement exceptionnel.',
                 'time' => $time,
                 'date' => $date,
@@ -182,9 +235,6 @@ class VodunDaysController extends Controller
                 'date_to' => $event['date_to'] ?? null,
             ];
         }
-        
-        // Ajouter des événements fictifs pour les tests
-        $mappedEvents = array_merge($mappedEvents, $this->getFakeTestEvents());
         
         return $mappedEvents;
     }
@@ -224,72 +274,6 @@ class VodunDaysController extends Controller
         }
     }
     
-    /**
-     * Événements fictifs pour tester les fonctionnalités
-     */
-    private function getFakeTestEvents()
-    {
-        $now = new \DateTime();
-        $soon = clone $now;
-        $soon->modify('+1 hour');
-        $ongoing = clone $now;
-        $ongoing->modify('-30 minutes');
-        
-        return [
-            [
-                'id' => 'fake-vodundays-1',
-                'name' => '🎭 Festival VodunDays 2025',
-                'location' => 'Temple des Pythons, Ouidah',
-                'coordinates' => [2.0895, 6.3625],
-                'type' => 'vodur',
-                'category' => 'VodunDays',
-                'description' => 'Grand festival culturel célébrant les traditions Vodun. Cérémonie spéciale avec danse traditionnelle et bénédiction.',
-                'time' => $ongoing->format('H:i') . ' - 22:00',
-                'date' => $ongoing->format('d F Y'),
-                'icon' => '🏛️',
-                'image' => 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&h=400&fit=crop',
-                'status' => 'ongoing',
-                'isVodunDays' => true,
-                'date_from' => $ongoing->format('Y-m-d H:i:s'),
-                'date_to' => $now->modify('+3 hours')->format('Y-m-d H:i:s'),
-            ],
-            [
-                'id' => 'fake-vodundays-2',
-                'name' => '🌟 Cérémonie VodunDays Spéciale',
-                'location' => 'Porte du Non-Retour, Ouidah',
-                'coordinates' => [2.0845, 6.3590],
-                'type' => 'vodur',
-                'category' => 'VodunDays',
-                'description' => 'Cérémonie commémorative à la Porte du Non-Retour.',
-                'time' => $soon->format('H:i') . ' - 19:00',
-                'date' => $soon->format('d F Y'),
-                'icon' => '🏛️',
-                'image' => 'https://images.unsplash.com/photo-1548013146-72479768bada?w=400&h=400&fit=crop',
-                'status' => 'starting-soon',
-                'isVodunDays' => true,
-                'date_from' => $soon->format('Y-m-d H:i:s'),
-                'date_to' => $soon->modify('+2 hours')->format('Y-m-d H:i:s'),
-            ],
-            [
-                'id' => 'fake-concert-1',
-                'name' => '🎵 Concert Live - Angelique Kidjo',
-                'location' => 'Stade de l\'Amitié, Cotonou',
-                'coordinates' => [2.4285, 6.3650],
-                'type' => 'concert',
-                'category' => 'Divertissement',
-                'description' => 'Concert exceptionnel de la star internationale Angelique Kidjo.',
-                'time' => $soon->modify('+30 minutes')->format('H:i') . ' - 23:00',
-                'date' => $soon->format('d F Y'),
-                'icon' => '🎵',
-                'image' => 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&h=400&fit=crop',
-                'status' => 'starting-soon',
-                'isVodunDays' => false,
-                'date_from' => $soon->format('Y-m-d H:i:s'),
-                'date_to' => $soon->modify('+4 hours')->format('Y-m-d H:i:s'),
-            ],
-        ];
-    }
-
     /**
      * Déterminer le type d'événement pour le filtrage
      */
