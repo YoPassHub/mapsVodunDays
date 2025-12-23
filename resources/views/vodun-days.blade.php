@@ -38,6 +38,13 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(0, 0, 0, 0.1);
             z-index: 1;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        
+        .info-panel.hide {
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
         }
         
         .info-panel h1 {
@@ -127,33 +134,37 @@
             position: absolute;
             top: 30px;
             right: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            padding: 8px;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
             z-index: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .search-box:hover {
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.08);
         }
         
         .search-box input {
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.15);
+            background: transparent;
+            border: none;
             color: #1b1b18;
-            padding: 10px 15px;
-            border-radius: 8px;
+            padding: 12px 20px;
+            border-radius: 50px;
             width: 250px;
             font-size: 14px;
+            transition: all 0.3s ease;
         }
         
         .search-box input::placeholder {
-            color: rgba(27, 27, 24, 0.5);
+            color: rgba(27, 27, 24, 0.4);
         }
         
         .search-box input:focus {
             outline: none;
-            border-color: rgba(0, 0, 0, 0.3);
-            background: white;
+            background: rgba(0, 0, 0, 0.02);
         }
 
         /* Panneau de détails de l'événement */
@@ -164,12 +175,12 @@
             width: 400px;
             max-height: 80vh;
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
             overflow: hidden;
             transform: translateY(calc(100% + 50px));
             opacity: 0;
-            transition: all 0.4s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1000;
         }
         
@@ -360,6 +371,237 @@
         .event-details-button:active {
             transform: translateY(0);
         }
+        
+        /* Media Queries pour Mobile */
+        @media (max-width: 768px) {
+            .info-panel {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+                padding: 12px 15px;
+            }
+            
+            .info-panel h1 {
+                font-size: 16px;
+            }
+            
+            .info-panel p {
+                font-size: 11px;
+                margin-bottom: 8px;
+            }
+            
+            /* Afficher seulement 3 filtres sur mobile */
+            .nav-btn:nth-child(n+4) {
+                display: none;
+            }
+            
+            .search-box {
+                top: auto;
+                bottom: 100px;
+                right: 10px;
+                left: 10px;
+                padding: 6px;
+            }
+            
+            .search-box input {
+                width: 100%;
+                font-size: 13px;
+                padding: 10px 16px;
+            }
+            
+            .legend {
+                gap: 6px;
+            }
+            
+            .legend-item {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+            
+            .bottom-nav {
+                bottom: 15px;
+                left: 10px;
+                right: 10px;
+                transform: none;
+                padding: 10px;
+                gap: 8px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .nav-btn {
+                padding: 8px 12px;
+                font-size: 11px;
+                min-width: auto;
+            }
+            
+            .nav-btn span {
+                font-size: 14px;
+            }
+            
+            .search-container {
+                top: auto;
+                bottom: 100px;
+                left: 10px;
+                right: 10px;
+                width: auto;
+            }
+            
+            .search-input {
+                font-size: 14px;
+                padding: 10px 40px 10px 15px;
+            }
+            
+            .search-icon {
+                right: 12px;
+                font-size: 16px;
+            }
+            
+            .event-details-panel {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                bottom: auto;
+                right: auto;
+                width: 90%;
+                max-width: 380px;
+                max-height: calc(100vh - 140px);
+                border-radius: 20px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+                background: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(15px);
+            }
+            
+            .event-details-header {
+                height: 150px;
+                border-radius: 20px 20px 0 0;
+            }
+            
+            .event-details-content {
+                padding: 16px;
+                max-height: calc(100vh - 290px);
+                overflow-y: auto;
+            }
+            
+            .event-details-title {
+                font-size: 20px;
+                margin-bottom: 8px;
+            }
+            
+            .event-details-location {
+                font-size: 13px;
+                margin-bottom: 12px;
+            }
+            
+            .event-details-meta {
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 16px;
+                padding-bottom: 16px;
+            }
+            
+            .event-meta-item {
+                font-size: 13px;
+            }
+            
+            .event-details-description {
+                font-size: 14px;
+                line-height: 1.5;
+                margin-bottom: 20px;
+            }
+            
+            .event-details-button {
+                font-size: 15px;
+                padding: 14px;
+                border-radius: 14px;
+            }
+            
+            .event-details-close {
+                width: 40px;
+                height: 40px;
+                top: 12px;
+                right: 12px;
+                font-size: 22px;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+            }
+            
+            /* Masquer certains éléments sur mobile */
+            .legend {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .info-panel {
+                padding: 10px 12px;
+            }
+            
+            .info-panel h1 {
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+            
+            .info-panel p {
+                font-size: 10px;
+                margin-bottom: 6px;
+                line-height: 1.3;
+            }
+            
+            .nav-btn {
+                padding: 6px 10px;
+                font-size: 10px;
+            }
+            
+            .nav-btn span:first-child {
+                font-size: 12px;
+            }
+            
+            .search-box {
+                padding: 5px;
+            }
+            
+            .search-box input {
+                font-size: 12px;
+                padding: 8px 14px;
+            }
+            
+            .event-details-panel {
+                top: 10px;
+                left: 10px;
+                width: calc(100% - 20px);
+                max-width: calc(100% - 20px);
+                max-height: calc(100vh - 120px);
+                background: rgba(255, 255, 255, 0.80);
+            }
+            
+            .event-details-header {
+                height: 130px;
+            }
+            
+            .event-details-content {
+                padding: 14px;
+                max-height: calc(100vh - 250px);
+            }
+            
+            .event-details-title {
+                font-size: 18px;
+            }
+            
+            .event-meta-item {
+                font-size: 12px;
+            }
+            
+            .event-details-description {
+                font-size: 13px;
+            }
+            
+            .event-details-button {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -456,16 +698,24 @@
         let map;
         let markers = [];
         let currentEvent = null;
+        
+        // Masquer le panneau d'information après 5 secondes
+        setTimeout(() => {
+            const infoPanel = document.querySelector('.info-panel');
+            if (infoPanel) {
+                infoPanel.classList.add('hide');
+            }
+        }, 5000);
 
         function initMap() {
             // Créer la carte centrée sur Ouidah
             map = new google.maps.Map(document.getElementById('map'), {
                 center: { lat: 6.3611, lng: 2.0850 },
                 zoom: 14,
-                mapTypeControl: true,
-                streetViewControl: true,
-                fullscreenControl: true,
-                zoomControl: true,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: false,
+                zoomControl: false,
                 mapTypeId: 'roadmap',
                 styles: [
                     {
