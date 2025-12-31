@@ -219,6 +219,25 @@
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
         }
         
+        /* Style spécial pour le Stand MTN - Bordure jaune dorée */
+        .google-marker.mtn-special .google-marker-circle {
+            border-color: #ffcc00;
+            border-width: 5px;
+            box-shadow: 0 0 25px rgba(255, 204, 0, 0.8), 0 0 40px rgba(255, 204, 0, 0.4);
+            animation: pulse-mtn 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-mtn {
+            0%, 100% {
+                box-shadow: 0 0 25px rgba(255, 204, 0, 0.8), 0 0 40px rgba(255, 204, 0, 0.4);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 35px rgba(255, 204, 0, 1), 0 0 55px rgba(255, 204, 0, 0.6);
+                transform: scale(1.08);
+            }
+        }
+        
         /* Animation clignotante pour événements en cours */
         .google-marker.ongoing-event .google-marker-circle {
             animation: pulse-marker 1.5s ease-in-out infinite;
@@ -636,13 +655,13 @@
 
     <!-- Navigation des filtres -->
     <div class="bottom-nav">
-        <button class="nav-btn active" data-filter="all">
-            <span>📍</span>
-            <span>Tous</span>
-        </button>
-        <button class="nav-btn" data-filter="vodur">
+        <button class="nav-btn active" data-filter="vodur">
             <img src="{{ asset('vodun-days.png') }}" alt="VodunDays" style="width: 20px; height: 20px; object-fit: contain;">
             <span>Vodundays</span>
+        </button>
+        <button class="nav-btn" data-filter="all">
+            <span>📍</span>
+            <span>Tous</span>
         </button>
         @foreach($categories->take(4) as $category)
         <button class="nav-btn" data-filter="category-{{ $category['id'] }}" data-category-label="{{ $category['label'] }}">
@@ -731,14 +750,11 @@
                 addMarker(event);
             });
 
-            // Ajuster la vue pour inclure tous les marqueurs
-            if (markers.length > 0) {
-                const bounds = new google.maps.LatLngBounds();
-                markers.forEach(({ marker }) => {
-                    bounds.extend(marker.getPosition());
-                });
-                map.fitBounds(bounds);
-            }
+            // Filtrer pour afficher seulement les événements VodunDays au chargement
+            filterMarkers('vodur');
+            
+            // Garder le focus sur Ouidah au lieu d'ajuster aux marqueurs
+            // (La carte reste centrée sur Ouidah avec zoom 14)
         }
 
         function addMarker(event) {
@@ -754,6 +770,9 @@
             // Ajouter classes spéciales
             if (event.isVodunDays) {
                 markerEl.classList.add('vodundays-event');
+            }
+            if (event.isMtnSpecial) {
+                markerEl.classList.add('mtn-special');
             }
             if (event.status === 'ongoing') {
                 markerEl.classList.add('ongoing-event');
@@ -879,6 +898,30 @@
             }
         });
 
+        // Fonction pour filtrer les marqueurs
+        function filterMarkers(filter, categoryLabel = null) {
+            markers.forEach(({ marker, overlay, event }) => {
+                let shouldShow = false;
+                
+                if (filter === 'all') {
+                    shouldShow = true;
+                } else if (filter === 'vodur') {
+                    shouldShow = event.isVodunDays === true;
+                } else if (filter.startsWith('category-')) {
+                    // Filtrer par catégorie API
+                    shouldShow = event.category === categoryLabel;
+                } else {
+                    shouldShow = event.type === filter;
+                }
+                
+                if (overlay) {
+                    overlay.setMap(shouldShow ? map : null);
+                } else {
+                    marker.setMap(shouldShow ? map : null);
+                }
+            });
+        }
+        
         // Filtrage des événements
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -888,26 +931,7 @@
                 const filter = this.dataset.filter;
                 const categoryLabel = this.dataset.categoryLabel;
                 
-                markers.forEach(({ marker, overlay, event }) => {
-                    let shouldShow = false;
-                    
-                    if (filter === 'all') {
-                        shouldShow = true;
-                    } else if (filter === 'vodur') {
-                        shouldShow = event.isVodunDays === true;
-                    } else if (filter.startsWith('category-')) {
-                        // Filtrer par catégorie API
-                        shouldShow = event.category === categoryLabel;
-                    } else {
-                        shouldShow = event.type === filter;
-                    }
-                    
-                    if (overlay) {
-                        overlay.setMap(shouldShow ? map : null);
-                    } else {
-                        marker.setMap(shouldShow ? map : null);
-                    }
-                });
+                filterMarkers(filter, categoryLabel);
             });
         });
 

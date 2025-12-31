@@ -236,6 +236,26 @@ class VodunDaysController extends Controller
             ];
         }
         
+        // Ajouter l'événement spécial MTN avec un marqueur unique
+        $mappedEvents[] = [
+            'id' => 'mtn_stand_special',
+            'name' => 'Stand principal MTN',
+            'location' => 'Ouidah',
+            'coordinates' => [2.089114, 6.325060], // [longitude, latitude]
+            'type' => 'stand',
+            'category' => 'Stand',
+            'description' => 'Tout vos services de télécommunications et mobile money disponible pour la fête des vodoun.',
+            'time' => '08:00 - 20:00',
+            'date' => $this->formatEventDate(date('Y-m-d')),
+            'icon' => '📱',
+            'image' => 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop',
+            'status' => 'ongoing',
+            'isVodunDays' => true,
+            'isMtnSpecial' => true, // Marqueur spécial pour différencier ce stand
+            'date_from' => date('Y-m-d H:i:s'),
+            'date_to' => date('Y-m-d') . ' 20:00:00',
+        ];
+        
         return $mappedEvents;
     }
     
